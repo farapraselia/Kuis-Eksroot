@@ -1,0 +1,1996 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Super Rimba: Petualangan Eksponen &amp; Bentuk Akar</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka & Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            touch-action: none;
+        }
+
+        html, body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #132A20;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100dvh;
+            min-height: -webkit-fill-available;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1, h2, h3, .font-mario {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* Kartu Perkamen / Kertas Jurnal Alam */
+        .parchment-card {
+            background: linear-gradient(145deg, #FAF9F2 0%, #F1EDE0 100%);
+            border: 4px solid #7F4F24;
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), inset 0 2px 0 rgba(255, 255, 255, 0.9);
+            touch-action: pan-y;
+        }
+
+        /* Papan Kayu HUD Atas */
+        .wood-hud {
+            background: linear-gradient(180deg, #6F4518 0%, #4A2B0B 100%);
+            border-bottom: 3px solid #A47148;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+        }
+
+        /* Rendering Notasi Matematika Tajam */
+        .math-expr {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.16rem;
+            font-weight: 800;
+            color: #1B4332;
+        }
+
+        .math-expr sup {
+            font-size: 0.68em;
+            line-height: 0;
+            position: relative;
+            vertical-align: baseline;
+            top: -0.55em;
+            color: #B45309;
+            font-weight: 800;
+            margin-left: 1px;
+        }
+
+        /* Simbol Bentuk Akar dengan Vinculum */
+        .rad {
+            display: inline-flex;
+            align-items: center;
+            vertical-align: middle;
+        }
+
+        .rad-sym {
+            font-size: 1.15em;
+            font-weight: 800;
+            color: #2D6A4F;
+            margin-right: 1px;
+            line-height: 1;
+        }
+
+        .rad-body {
+            border-top: 2.5px solid #2D6A4F;
+            padding: 1px 4px 0 3px;
+            display: inline-flex;
+            align-items: center;
+            line-height: 1.15;
+        }
+
+        /* Pecahan Bertumpuk */
+        .frac {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            margin: 0 0.22rem;
+            font-size: 0.88em;
+        }
+
+        .frac-num {
+            border-bottom: 2.5px solid #1B4332;
+            padding: 0 5px 2px 5px;
+            text-align: center;
+            line-height: 1.15;
+        }
+
+        .frac-den {
+            padding: 2px 5px 0 5px;
+            text-align: center;
+            line-height: 1.15;
+        }
+
+        /* Tombol 3D ala Game Mario */
+        .btn-mario {
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            box-shadow: 0 4px 0 #3F2305;
+            touch-action: manipulation;
+        }
+        .btn-mario:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #3F2305;
+        }
+
+        /* Kontrol Sentuh Layar HP/Tablet/Papan Tulis Kelas */
+        .touch-controls-bar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: max(14px, env(safe-area-inset-bottom));
+            padding: 0 16px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            z-index: 40;
+            pointer-events: none;
+        }
+
+        /* Sembunyikan kontrol sentuh hanya pada desktop besar non-touch */
+        @media (min-width: 1025px) and (hover: hover) and (pointer: fine) {
+            .touch-controls-bar {
+                display: none;
+            }
+        }
+
+        .touch-btn {
+            background: rgba(20, 54, 38, 0.78);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border: 3px solid #FDE047;
+            box-shadow: 0 6px 0 #143626, 0 10px 20px rgba(0, 0, 0, 0.45);
+            color: #FEF9C3;
+            pointer-events: auto;
+            touch-action: none;
+            transition: transform 0.06s ease, background-color 0.06s ease, box-shadow 0.06s ease;
+        }
+
+        .touch-btn:active, .touch-btn.pressed {
+            transform: translateY(4px) scale(0.95);
+            background: #FACC15;
+            border-color: #FEF08A;
+            color: #1B4332;
+            box-shadow: 0 2px 0 #143626, 0 4px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Penyesuaian HUD ringkas di HP */
+        @media (max-width: 768px) {
+            .wood-hud {
+                padding-top: 5px;
+                padding-bottom: 5px;
+            }
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.92); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: popIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes shakeWrong {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-6px); }
+            80% { transform: translateX(6px); }
+        }
+        .animate-shake {
+            animation: shakeWrong 0.35s ease-in-out;
+        }
+
+        @keyframes floatTitle {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-float {
+            animation: floatTitle 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== HUD ATAS PAPAN KAYU (RINGKAS DI HP) ==================== -->
+    <header id="topHud" class="wood-hud w-full px-2.5 sm:px-5 py-1.5 sm:py-2 flex items-center justify-between z-20 text-amber-100 shrink-0">
+        <!-- Kiri: Ikon Kompas & 5 Daun Nyawa -->
+        <div class="flex items-center gap-1.5 sm:gap-3">
+            <div class="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-emerald-600 border-2 border-amber-300 flex items-center justify-center shadow shrink-0">
+                <i class="fa-solid fa-compass text-amber-200 text-xs sm:text-base"></i>
+            </div>
+            <div class="hidden md:block">
+                <div class="font-mario text-base leading-none text-amber-200 tracking-wide">SUPER RIMBA</div>
+                <div class="text-[11px] text-emerald-200 font-semibold">Eksponen &amp; Bentuk Akar</div>
+            </div>
+
+            <!-- 5 Daun Kehidupan -->
+            <div id="livesDisplay" class="flex items-center gap-0.5 sm:gap-1 bg-black/40 px-2 py-0.5 sm:py-1 rounded-lg sm:rounded-xl border border-amber-400/35" title="Daun Ketahanan">
+                <!-- Dirender via JS -->
+            </div>
+        </div>
+
+        <!-- Tengah: Progres Pos Soal Wajib (0 / 10) -->
+        <div class="flex flex-col items-center">
+            <div class="flex items-center gap-1 text-[11px] sm:text-sm font-extrabold text-amber-200 leading-tight">
+                <i class="fa-solid fa-lock-open text-emerald-400 text-[10px] sm:text-xs"></i>
+                <span id="blockProgressText">Pos: 0 / 10</span>
+            </div>
+            <!-- Mini-map 10 titik pos -->
+            <div id="miniMapDots" class="flex items-center gap-0.5 sm:gap-1 mt-0.5 sm:mt-1">
+                <!-- 10 titik dirender via JS -->
+            </div>
+        </div>
+
+        <!-- Kanan: Koin Daun, Skor, Jurnal Rumus & Audio -->
+        <div class="flex items-center gap-1.5 sm:gap-2">
+            <!-- Koin Daun Emas -->
+            <div class="bg-black/40 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg sm:rounded-xl border border-amber-400/35 flex items-center gap-1" title="Koin Daun Emas">
+                <i class="fa-solid fa-leaf text-amber-400 text-[11px] sm:text-sm"></i>
+                <span id="coinsText" class="font-mario text-xs sm:text-sm text-amber-200">0</span>
+            </div>
+
+            <!-- Skor -->
+            <div class="bg-black/40 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg sm:rounded-xl border border-amber-400/35 flex items-center gap-1" title="Skor Petualangan">
+                <i class="fa-solid fa-star text-yellow-300 text-[11px] sm:text-sm"></i>
+                <span id="scoreText" class="font-mario text-xs sm:text-sm text-yellow-200">0</span>
+            </div>
+
+            <!-- Tombol Jurnal Rumus -->
+            <button onclick="openFormulaModal()" class="btn-mario px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl bg-gradient-to-b from-amber-300 to-amber-500 border-2 border-amber-800 text-amber-950 font-extrabold text-[11px] sm:text-xs flex items-center gap-1 cursor-pointer">
+                <i class="fa-solid fa-book-bookmark"></i>
+                <span class="hidden sm:inline">Jurnal Rumus</span>
+            </button>
+
+            <!-- Tombol Audio -->
+            <button onclick="toggleSound()" class="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-black/40 hover:bg-black/60 border border-amber-400/35 flex items-center justify-center text-amber-200 cursor-pointer" title="Suara">
+                <i id="soundIcon" class="fa-solid fa-volume-high text-xs sm:text-sm"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ==================== AREA CANVAS PLATFORMER MARIO RIMBA ==================== -->
+    <div id="canvasWrapper" class="relative flex-grow w-full overflow-hidden bg-sky-300">
+        <canvas id="gameCanvas" class="block w-full h-full"></canvas>
+
+        <!-- Petunjuk Melayang di Atas Canvas -->
+        <div id="floatingHint" class="hidden absolute top-2 sm:top-3 left-1/2 -translate-x-1/2 bg-emerald-950/90 text-amber-100 border border-amber-400/70 px-3 py-1 rounded-full text-[11px] sm:text-sm font-bold shadow-lg pointer-events-none max-w-[94vw] truncate z-10">
+            <!-- Diisi otomatis via JS -->
+        </div>
+
+        <!-- ==================== TOMBOL KONTROL SENTUH LAYAR HP/TABLET (ALWAYS VISIBLE ON TOUCH/MOBILE) ==================== -->
+        <div id="touchControls" class="touch-controls-bar">
+            <!-- Kiri & Kanan -->
+            <div class="flex items-center gap-3 sm:gap-4">
+                <button id="btnLeft" type="button" aria-label="Jalan Kiri" class="touch-btn w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center text-3xl sm:text-4xl font-bold">
+                    <i class="fa-solid fa-caret-left"></i>
+                </button>
+                <button id="btnRight" type="button" aria-label="Jalan Kanan" class="touch-btn w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center text-3xl sm:text-4xl font-bold">
+                    <i class="fa-solid fa-caret-right"></i>
+                </button>
+            </div>
+
+            <!-- Tombol Lompat -->
+            <div>
+                <button id="btnJump" type="button" aria-label="Lompat" class="touch-btn px-5 sm:px-7 h-16 sm:h-20 rounded-2xl flex items-center justify-center gap-2 font-mario text-lg sm:text-xl tracking-wide">
+                    <i class="fa-solid fa-arrow-up text-xl sm:text-2xl"></i>
+                    <span>LOMPAT</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ==================== OVERLAY LAYAR MULAI (START SCREEN) ==================== -->
+        <div id="startOverlay" class="absolute inset-0 bg-emerald-950/75 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
+            <div class="parchment-card rounded-3xl p-5 sm:p-8 max-w-xl w-full text-center relative animate-pop my-auto">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-800 text-amber-200 text-[11px] sm:text-xs font-extrabold uppercase tracking-wider mb-2.5 shadow">
+                    <i class="fa-solid fa-trees"></i> Game Edukasi Platformer Kelas
+                </div>
+
+                <h1 class="font-mario text-3xl sm:text-5xl text-emerald-950 drop-shadow-sm leading-tight animate-float">
+                    SUPER <span class="text-emerald-700">RIMBA</span>
+                </h1>
+                <p class="font-mario text-base sm:text-xl text-amber-800 mt-1 mb-3">
+                    Petualangan Eksponen &amp; Bentuk Akar
+                </p>
+
+                <p class="text-stone-700 text-xs sm:text-sm max-w-md mx-auto mb-4 leading-relaxed font-medium">
+                    Jelajahi hutan rimba, kumpulkan koin daun emas, dan buka <b>10 Gerbang Sulur Akar Wajib</b> dengan menyundul Blok Misteri <b>[?]</b> atau menyentuh gerbang di setiap pos!
+                </p>
+
+                <!-- Panduan Singkat -->
+                <div class="grid grid-cols-3 gap-2 max-w-md mx-auto mb-5 text-[11px] sm:text-xs">
+                    <div class="bg-[#EAE5D1] border border-[#C8B99E] p-2 rounded-xl">
+                        <div class="font-extrabold text-emerald-900 mb-0.5"><i class="fa-solid fa-arrows-left-right"></i> Gerak</div>
+                        <div class="text-stone-600">Tombol ◀ ▶ / A-D</div>
+                    </div>
+                    <div class="bg-[#EAE5D1] border border-[#C8B99E] p-2 rounded-xl">
+                        <div class="font-extrabold text-emerald-900 mb-0.5"><i class="fa-solid fa-arrow-up"></i> Lompat</div>
+                        <div class="text-stone-600">LOMPAT / Spasi</div>
+                    </div>
+                    <div class="bg-[#EAE5D1] border border-[#C8B99E] p-2 rounded-xl">
+                        <div class="font-extrabold text-amber-800 mb-0.5"><i class="fa-solid fa-lock"></i> 10 Pos Wajib</div>
+                        <div class="text-stone-600">Jawab = Buka</div>
+                    </div>
+                </div>
+
+                <button onclick="startGame()" class="btn-mario w-full sm:w-auto px-8 py-3.5 sm:py-4 rounded-2xl bg-gradient-to-b from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 border-2 border-emerald-950 text-amber-100 font-mario text-lg sm:text-xl tracking-wide shadow-xl flex items-center justify-center gap-3 mx-auto cursor-pointer">
+                    <i class="fa-solid fa-play"></i>
+                    <span>MULAI PETUALANGAN!</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ==================== OVERLAY MODAL SOAL WAJIB (TIDAK BISA DILEWATI) ==================== -->
+        <div id="quizOverlay" class="hidden absolute inset-0 bg-emerald-950/85 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-5 z-50 overflow-y-auto">
+            <div id="quizCard" class="parchment-card rounded-3xl p-4 sm:p-7 max-w-2xl w-full my-auto animate-pop relative max-h-[94dvh] overflow-y-auto">
+                <!-- Header Pos Soal Wajib (TANPA TOMBOL TUTUP / SKIP) -->
+                <div class="flex items-center justify-between gap-2 pb-2.5 mb-3 sm:mb-4 border-b-2 border-[#D4C8B0]">
+                    <div class="flex items-center gap-2">
+                        <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-b from-amber-300 to-amber-500 border-2 border-amber-800 flex items-center justify-center font-mario text-base sm:text-lg text-amber-950 shadow shrink-0">
+                            <span id="quizBlockBadge">1</span>
+                        </div>
+                        <div>
+                            <div class="flex flex-wrap items-center gap-1">
+                                <span id="quizCategoryBadge" class="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-800 text-amber-200">
+                                    Eksponen • Mudah
+                                </span>
+                                <span class="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-500">
+                                    <i class="fa-solid fa-lock mr-1"></i>Gerbang Wajib
+                                </span>
+                            </div>
+                            <h3 class="font-mario text-sm sm:text-lg text-emerald-950 mt-0.5">
+                                Pos Penjaga #<span id="quizNumberTitle">1</span> dari 10
+                            </h3>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Jurnal Rumus -->
+                    <button onclick="openFormulaModal()" class="px-2.5 py-1.5 rounded-xl bg-amber-200/90 hover:bg-amber-300 border border-amber-600 text-amber-950 font-bold text-xs flex items-center gap-1 cursor-pointer shrink-0">
+                        <i class="fa-solid fa-book-open"></i>
+                        <span>Rumus</span>
+                    </button>
+                </div>
+
+                <!-- Pertanyaan -->
+                <div class="text-center mb-4">
+                    <p id="quizPromptText" class="text-stone-700 text-xs sm:text-base font-bold mb-2">
+                        Nilai dari 2³ adalah ....
+                    </p>
+                    <div id="quizMathBox" class="text-xl sm:text-3xl py-2.5 px-5 rounded-2xl bg-[#EAE5D1] border-2 border-[#C8B99E] inline-block min-w-[180px] shadow-inner">
+                        <!-- Ekspresi Matematika -->
+                    </div>
+                </div>
+
+                <!-- Pilihan Jawaban A, B, C, D -->
+                <div id="quizOptionsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <!-- Dirender lewat JS -->
+                </div>
+
+                <!-- Kotak Hasil & Pembahasan Lengkap -->
+                <div id="quizFeedbackBox" class="hidden mt-4 rounded-2xl p-3.5 sm:p-4 border-2 animate-pop">
+                    <div class="flex items-start gap-2.5 sm:gap-3">
+                        <div id="quizFeedbackIconBox" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-white shrink-0 mt-0.5 shadow">
+                            <i id="quizFeedbackIcon" class="fa-solid fa-check"></i>
+                        </div>
+                        <div class="flex-grow">
+                            <div id="quizFeedbackTitle" class="font-mario text-sm sm:text-lg leading-snug">
+                                JAWABAN BENAR! +100 Poin
+                            </div>
+                            <div id="quizCorrectKeyBadge" class="hidden mt-1 inline-block px-2.5 py-0.5 rounded-lg bg-emerald-800 text-amber-200 text-xs font-extrabold">
+                                <!-- Kunci Jawaban saat salah -->
+                            </div>
+                            <div id="quizExplanationText" class="text-stone-800 text-xs sm:text-sm mt-2 bg-white/95 p-2.5 sm:p-3 rounded-xl border border-stone-200 leading-relaxed">
+                                <!-- Pembahasan lengkap -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3.5 flex justify-end">
+                        <button id="quizContinueBtn" onclick="unlockGateAndResume()" class="btn-mario w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 border-2 border-emerald-950 text-amber-100 font-mario text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer">
+                            <span id="quizContinueText">Lanjut Berpetualang</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== OVERLAY LAYAR AKHIR (REKAP NILAI & FINIS) ==================== -->
+        <div id="endOverlay" class="hidden absolute inset-0 bg-emerald-950/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
+            <div class="parchment-card rounded-3xl p-4 sm:p-7 max-w-2xl w-full text-center animate-pop my-auto max-h-[94dvh] overflow-y-auto">
+                <div id="endIconBox" class="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-2xl bg-gradient-to-br from-amber-300 to-amber-500 border-3 border-amber-800 flex items-center justify-center text-2xl sm:text-3xl text-amber-950 shadow-xl mb-2.5 animate-float">
+                    <i id="endIcon" class="fa-solid fa-trophy"></i>
+                </div>
+
+                <h2 id="endTitle" class="font-mario text-2xl sm:text-4xl text-emerald-950 mb-1">
+                    Puncak Rimba Tercapai!
+                </h2>
+                <p id="endSubtitle" class="text-stone-700 text-xs sm:text-sm mb-3.5 font-medium">
+                    Selamat! Kamu telah menyelesaikan seluruh 10 Pos Eksponen &amp; Bentuk Akar!
+                </p>
+
+                <!-- Statistik Akhir -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3.5">
+                    <div class="bg-[#EAE5D1] border-2 border-[#C8B99E] p-2 rounded-2xl">
+                        <div class="text-[10px] font-bold text-stone-600 uppercase">Skor Akhir</div>
+                        <div id="endScoreVal" class="font-mario text-base sm:text-xl text-emerald-800">0</div>
+                    </div>
+                    <div class="bg-[#EAE5D1] border-2 border-[#C8B99E] p-2 rounded-2xl">
+                        <div class="text-[10px] font-bold text-stone-600 uppercase">Jawaban Benar</div>
+                        <div id="endCorrectVal" class="font-mario text-base sm:text-xl text-emerald-700">0 / 10</div>
+                    </div>
+                    <div class="bg-[#EAE5D1] border-2 border-[#C8B99E] p-2 rounded-2xl">
+                        <div class="text-[10px] font-bold text-stone-600 uppercase">Jawaban Salah</div>
+                        <div id="endWrongVal" class="font-mario text-base sm:text-xl text-rose-700">0 / 10</div>
+                    </div>
+                    <div class="bg-[#EAE5D1] border-2 border-[#C8B99E] p-2 rounded-2xl">
+                        <div class="text-[10px] font-bold text-stone-600 uppercase">Koin Daun</div>
+                        <div id="endCoinsVal" class="font-mario text-base sm:text-xl text-amber-700">0</div>
+                    </div>
+                </div>
+
+                <!-- Rekapitulasi Per Soal (1 - 10) -->
+                <div class="bg-[#EAE5D1] border-2 border-[#C8B99E] rounded-2xl p-2.5 sm:p-3 mb-4 text-left">
+                    <div class="text-xs font-extrabold text-emerald-950 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-clipboard-check text-emerald-700"></i> Rekap Hasil 10 Pos Soal:
+                    </div>
+                    <div id="endRecapGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 max-h-36 overflow-y-auto pr-1">
+                        <!-- Rekap 10 soal dirender lewat JS -->
+                    </div>
+                </div>
+
+                <button onclick="restartFullGame()" class="btn-mario w-full sm:w-auto px-8 py-3 rounded-2xl bg-gradient-to-b from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 border-2 border-amber-900 text-amber-950 font-mario text-base sm:text-lg flex items-center justify-center gap-2 mx-auto cursor-pointer">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>ULANGI PETUALANGAN</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL JURNAL RUMUS ALAM ==================== -->
+    <div id="formulaModal" class="hidden fixed inset-0 z-50 bg-emerald-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+        <div class="parchment-card rounded-3xl w-full max-w-xl max-h-[88dvh] flex flex-col shadow-2xl animate-pop">
+            <div class="wood-hud p-3.5 sm:p-4 rounded-t-[20px] flex items-center justify-between text-amber-100 shrink-0">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-book-bookmark text-amber-300 text-lg sm:text-xl"></i>
+                    <h3 class="font-mario text-base sm:text-lg">Jurnal Rumus Eksponen &amp; Akar</h3>
+                </div>
+                <button onclick="closeFormulaModal()" class="w-8 h-8 rounded-lg bg-black/30 hover:bg-black/50 flex items-center justify-center cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs sm:text-sm">
+                <div>
+                    <h4 class="font-extrabold text-emerald-900 uppercase mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-seedling text-emerald-700"></i> Sifat Eksponen (Perpangkatan)
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div class="p-2.5 rounded-xl bg-[#EAE5D1] border border-[#C8B99E] flex justify-between items-center">
+                            <span class="text-stone-700 font-semibold">Perkalian Basis Sama</span>
+                            <span class="math-expr">a<sup>m</sup> &times; a<sup>n</sup> = a<sup>m+n</sup></span>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-[#EAE5D1] border border-[#C8B99E] flex justify-between items-center">
+                            <span class="text-stone-700 font-semibold">Pangkat Dipangkatkan</span>
+                            <span class="math-expr">(a<sup>m</sup>)<sup>n</sup> = a<sup>m&times;n</sup></span>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-[#EAE5D1] border border-[#C8B99E] flex justify-between items-center">
+                            <span class="text-stone-700 font-semibold">Pangkat Nol (a &ne; 0)</span>
+                            <span class="math-expr">a<sup>0</sup> = 1</span>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-[#EAE5D1] border border-[#C8B99E] flex justify-between items-center">
+                            <span class="text-stone-700 font-semibold">Pangkat Negatif</span>
+                            <span class="math-expr">a<sup>-n</sup> = <span class="frac"><span class="frac-num">1</span><span class="frac-den">a<sup>n</sup></span></span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-extrabold text-amber-900 uppercase mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-tree text-emerald-700"></i> Sifat Bentuk Akar
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div class="p-2.5 rounded-xl bg-[#EAE5D1] border border-[#C8B99E] flex justify-between items-center">
+                            <span class="text-stone-700 font-semibold">Menyederhanakan</span>
+                            <span class="math-expr"><span class="rad"><span class="rad-sym">&radic;</span><span class="rad-body">a &times; b</span></span> = <span class="rad"><span class="rad-sym">&radic;</span><span class="rad-body">a</span></span> &times; <span class="rad"><span class="rad-sym">&radic;</span><span class="rad-body">b</span></span></span>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-[#EAE5D1] border border-[#C8B99E] flex justify-between items-center">
+                            <span class="text-stone-700 font-semibold">Penjumlahan Sejenis</span>
+                            <span class="math-expr">p<span class="rad"><span class="rad-sym">&radic;</span><span class="rad-body">a</span></span> + q<span class="rad"><span class="rad-sym">&radic;</span><span class="rad-body">a</span></span> = (p+q)<span class="rad"><span class="rad-sym">&radic;</span><span class="rad-body">a</span></span></span>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-[#EAE5D1] border border-[#C8B99E] flex justify-between items-center sm:col-span-2">
+                            <span class="text-stone-700 font-semibold">Merasionalkan Penyebut</span>
+                            <span class="math-expr"><span class="frac"><span class="frac-num">a</span><span class="frac-den"><span class="rad"><span class="rad-sym">&radic;</span><span class="rad-body">b</span></span></span></span> = <span class="frac"><span class="frac-num">a<span class="rad"><span class="rad-sym">&radic;</span><span class="rad-body">b</span></span></span><span class="frac-den">b</span></span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-3 border-t border-[#C8B99E] flex justify-end shrink-0">
+                <button onclick="closeFormulaModal()" class="btn-mario px-5 py-2 rounded-xl bg-emerald-800 text-amber-100 font-bold text-xs sm:text-sm cursor-pointer">
+                    Tutup Jurnal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SCRIPT GAME MARIO PLATFORMER & GERBANG WAJIB ==================== -->
+    <script>
+        /* =========================================================================
+           1. HELPER RENDERING NOTASI MATEMATIKA
+           ========================================================================= */
+        const M = {
+            rad: (val) => `<span class="rad"><span class="rad-sym">&radic;</span><span class="rad-body">${val}</span></span>`,
+            frac: (num, den) => `<span class="frac"><span class="frac-num">${num}</span><span class="frac-den">${den}</span></span>`,
+            pow: (base, exp) => `${base}<sup>${exp}</sup>`
+        };
+
+        /* =========================================================================
+           2. 10 SOAL SELANG-SELING (EKSPONEN -> AKAR -> EKSPONEN -> AKAR)
+              URUTAN DARI MUDAH KE SULIT
+           ========================================================================= */
+        const MARIO_QUESTIONS = [
+            // Pos 1 (Eksponen - Mudah)
+            {
+                id: 1,
+                category: "Eksponen • Mudah",
+                prompt: "Nilai dari 2³ adalah ....",
+                math: `${M.pow(2, 3)}`,
+                options: [
+                    { key: "A", html: "4" },
+                    { key: "B", html: "6" },
+                    { key: "C", html: "8" },
+                    { key: "D", html: "9" }
+                ],
+                correctKey: "C",
+                explanation: "Eksponen menunjukkan perkalian berulang. Jadi, <b>2<sup>3</sup> = 2 &times; 2 &times; 2 = 8</b>. Ingat, pangkat 3 berarti bilangan 2 dikalikan sebanyak tiga kali, bukan 2 &times; 3."
+            },
+            // Pos 2 (Bentuk Akar - Mudah)
+            {
+                id: 2,
+                category: "Bentuk Akar • Mudah",
+                prompt: "Hasil dari √49 adalah ....",
+                math: `${M.rad(49)}`,
+                options: [
+                    { key: "A", html: "5" },
+                    { key: "B", html: "6" },
+                    { key: "C", html: "7" },
+                    { key: "D", html: "8" }
+                ],
+                correctKey: "C",
+                explanation: "Akar kuadrat adalah kebalikan dari operasi pangkat dua. Karena 7 &times; 7 = 49, maka <b>&radic;49 = 7</b>."
+            },
+            // Pos 3 (Eksponen - Mudah)
+            {
+                id: 3,
+                category: "Eksponen • Mudah",
+                prompt: "Bentuk perkalian berulang dari 3⁴ adalah ....",
+                math: `${M.pow(3, 4)}`,
+                options: [
+                    { key: "A", html: "3 &times; 4" },
+                    { key: "B", html: "3 + 3 + 3 + 3" },
+                    { key: "C", html: "3 &times; 3 &times; 3 &times; 3" },
+                    { key: "D", html: "4 &times; 4 &times; 4" }
+                ],
+                correctKey: "C",
+                explanation: "Pada bentuk 3<sup>4</sup>, angka 3 disebut bilangan pokok dan angka 4 disebut pangkat. Artinya, angka 3 dikalikan dengan dirinya sendiri sebanyak empat kali: <b>3 &times; 3 &times; 3 &times; 3</b>."
+            },
+            // Pos 4 (Bentuk Akar - Menengah)
+            {
+                id: 4,
+                category: "Bentuk Akar • Menengah",
+                prompt: "Bentuk sederhana dari √12 adalah ....",
+                math: `${M.rad(12)}`,
+                options: [
+                    { key: "A", html: `2${M.rad(3)}` },
+                    { key: "B", html: `3${M.rad(2)}` },
+                    { key: "C", html: `4${M.rad(3)}` },
+                    { key: "D", html: `6${M.rad(2)}` }
+                ],
+                correctKey: "A",
+                explanation: "Cari faktor dari 12 yang merupakan bilangan kuadrat sempurna:<br>&radic;12 = &radic;(4 &times; 3) = &radic;4 &times; &radic;3 = <b>2&radic;3</b>.<br>Ingat, keluarkan faktor kuadrat sempurna dari dalam akar."
+            },
+            // Pos 5 (Eksponen - Menengah)
+            {
+                id: 5,
+                category: "Eksponen • Menengah",
+                prompt: "Hasil dari 2³ × 2² adalah ....",
+                math: `${M.pow(2, 3)} &times; ${M.pow(2, 2)}`,
+                options: [
+                    { key: "A", html: `${M.pow(2, 5)} = 32` },
+                    { key: "B", html: `${M.pow(2, 6)} = 64` },
+                    { key: "C", html: `${M.pow(2, 1)} = 2` },
+                    { key: "D", html: `${M.pow(2, 8)} = 256` }
+                ],
+                correctKey: "A",
+                explanation: "Jika dua bilangan memiliki bilangan pokok yang sama dan dikalikan, pangkatnya dijumlahkan:<br>2<sup>3</sup> &times; 2<sup>2</sup> = 2<sup>3+2</sup> = <b>2<sup>5</sup> = 32</b>.<br>Jangan mengalikan pangkatnya, tetapi jumlahkan pangkatnya."
+            },
+            // Pos 6 (Bentuk Akar - Menengah)
+            {
+                id: 6,
+                category: "Bentuk Akar • Menengah",
+                prompt: "Hasil dari √2 × √8 adalah ....",
+                math: `${M.rad(2)} &times; ${M.rad(8)}`,
+                options: [
+                    { key: "A", html: "2" },
+                    { key: "B", html: "4" },
+                    { key: "C", html: "6" },
+                    { key: "D", html: "8" }
+                ],
+                correctKey: "B",
+                explanation: "Jika dua bentuk akar dikalikan, bilangan di dalam akar dapat dikalikan:<br>&radic;2 &times; &radic;8 = &radic;16 = <b>4</b>.<br>Jangan mengalikan hasil akar secara sembarangan tanpa menggunakan sifat perkalian bentuk akar."
+            },
+            // Pos 7 (Eksponen - Menengah-Sulit)
+            {
+                id: 7,
+                category: "Eksponen • Menengah-Sulit",
+                prompt: "Hasil dari (3²)² adalah ....",
+                math: `(${M.pow(3, 2)})<sup>2</sup>`,
+                options: [
+                    { key: "A", html: "27" },
+                    { key: "B", html: "36" },
+                    { key: "C", html: "81" },
+                    { key: "D", html: "243" }
+                ],
+                correctKey: "C",
+                explanation: "Jika bilangan berpangkat dipangkatkan lagi, maka pangkatnya dikalikan:<br>(3<sup>2</sup>)<sup>2</sup> = 3<sup>2&times;2</sup> = 3<sup>4</sup> = <b>81</b>.<br>Ingat, aturan ini berbeda dengan perkalian bilangan berpangkat yang memiliki bilangan pokok sama."
+            },
+            // Pos 8 (Bentuk Akar - Sulit)
+            {
+                id: 8,
+                category: "Bentuk Akar • Sulit",
+                prompt: "Hasil dari √50 + √8 adalah ....",
+                math: `${M.rad(50)} + ${M.rad(8)}`,
+                options: [
+                    { key: "A", html: `7${M.rad(2)}` },
+                    { key: "B", html: `9${M.rad(2)}` },
+                    { key: "C", html: `6${M.rad(2)}` },
+                    { key: "D", html: `10${M.rad(2)}` }
+                ],
+                correctKey: "A",
+                explanation: "Sederhanakan masing-masing bentuk akar terlebih dahulu:<br>&radic;50 = &radic;(25 &times; 2) = 5&radic;2 dan &radic;8 = &radic;(4 &times; 2) = 2&radic;2.<br>Kemudian jumlahkan koefisiennya: 5&radic;2 + 2&radic;2 = <b>7&radic;2</b>. Ingat, hanya bentuk akar sejenis yang dapat dijumlahkan langsung."
+            },
+            // Pos 9 (Eksponen - Sulit)
+            {
+                id: 9,
+                category: "Eksponen • Sulit",
+                prompt: "Hasil dari 2⁻² + 3⁰ adalah ....",
+                math: `${M.pow(2, -2)} + ${M.pow(3, 0)}`,
+                options: [
+                    { key: "A", html: `${M.frac(1, 4)}` },
+                    { key: "B", html: `${M.frac(3, 4)}` },
+                    { key: "C", html: `${M.frac(5, 4)}` },
+                    { key: "D", html: "4" }
+                ],
+                correctKey: "C",
+                explanation: "Gunakan sifat pangkat negatif dan pangkat nol:<br>2<sup>-2</sup> = 1/2<sup>2</sup> = 1/4 dan 3<sup>0</sup> = 1.<br>Jadi, 1/4 + 1 = <b>5/4</b>. Ingat, bilangan bukan nol yang berpangkat nol selalu bernilai 1."
+            },
+            // Pos 10 (Bentuk Akar - Sulit)
+            {
+                id: 10,
+                category: "Bentuk Akar • Sulit",
+                prompt: "Bentuk rasional dari 4/√2 adalah ....",
+                math: `${M.frac(4, M.rad(2))}`,
+                options: [
+                    { key: "A", html: `2${M.rad(2)}` },
+                    { key: "B", html: `4${M.rad(2)}` },
+                    { key: "C", html: `2${M.rad(3)}` },
+                    { key: "D", html: `${M.rad(2)}` }
+                ],
+                correctKey: "A",
+                explanation: "Untuk menghilangkan akar pada penyebut, kalikan pembilang dan penyebut dengan &radic;2:<br>(4/&radic;2) &times; (&radic;2/&radic;2) = 4&radic;2 / 2 = <b>2&radic;2</b>."
+            }
+        ];
+
+        /* =========================================================================
+           3. AUDIO SINTETIS WEB AUDIO API (EFEK MARIO & ALAM)
+           ========================================================================= */
+        const RetroAudio = {
+            ctx: null,
+            enabled: true,
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioCtx();
+                }
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+            },
+            playFreq(freq, type, duration, delay = 0, vol = 0.11, slideTo = null) {
+                if (!this.enabled) return;
+                try {
+                    this.init();
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    const start = this.ctx.currentTime + delay;
+                    osc.frequency.setValueAtTime(freq, start);
+                    if (slideTo) {
+                        osc.frequency.exponentialRampToValueAtTime(slideTo, start + duration);
+                    }
+                    gain.gain.setValueAtTime(vol, start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(start);
+                    osc.stop(start + duration);
+                } catch (e) {}
+            },
+            jump() {
+                this.playFreq(230, 'square', 0.18, 0, 0.08, 630);
+            },
+            bump() {
+                this.playFreq(160, 'triangle', 0.11, 0, 0.16, 95);
+            },
+            coin() {
+                this.playFreq(987.77, 'square', 0.08, 0, 0.085);
+                this.playFreq(1318.51, 'square', 0.26, 0.08, 0.085);
+            },
+            stomp() {
+                this.playFreq(340, 'sawtooth', 0.12, 0, 0.1, 110);
+            },
+            gateBreak() {
+                this.playFreq(440, 'triangle', 0.12, 0, 0.14, 880);
+                this.playFreq(587.33, 'triangle', 0.18, 0.09, 0.14, 1174.66);
+            },
+            hurt() {
+                this.playFreq(290, 'sawtooth', 0.15, 0, 0.12, 140);
+                this.playFreq(210, 'sawtooth', 0.22, 0.12, 0.12, 95);
+            },
+            stageClear() {
+                const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50];
+                const times = [0, 0.11, 0.22, 0.33, 0.52, 0.66];
+                notes.forEach((n, i) => {
+                    this.playFreq(n, 'square', 0.18, times[i], 0.09);
+                });
+            }
+        };
+
+        function toggleSound() {
+            RetroAudio.enabled = !RetroAudio.enabled;
+            const icon = document.getElementById('soundIcon');
+            icon.className = RetroAudio.enabled ? 'fa-solid fa-volume-high text-xs sm:text-sm' : 'fa-solid fa-volume-xmark text-xs sm:text-sm text-amber-400/50';
+        }
+
+        /* =========================================================================
+           4. ENGINE GAME PLATFORMER 2D & SKALA RESPONSIF LAYAR HP
+           ========================================================================= */
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Gunakan sistem koordinat logis tetap agar proporsional di semua layar (portrait/landscape/desktop)
+        const LOGICAL_HEIGHT = 480;
+        let logicalW = 800;
+        let viewScale = 1;
+        let groundY = 365;
+
+        // Status Global Game
+        let state = {
+            status: 'start', // 'start', 'playing', 'quiz', 'victory'
+            score: 0,
+            coins: 0,
+            lives: 5,
+            maxLives: 5,
+            solvedCount: 0,
+            correctCount: 0,
+            wrongCount: 0,
+            activeCheckpoint: null,
+            quizAnsweredCurrent: false,
+            quizCooldown: 0,
+            cameraX: 0,
+            worldWidth: 5350,
+            flagX: 5000,
+            flagReached: false,
+            frameCount: 0
+        };
+
+        // Kontrol Input
+        const keys = { left: false, right: false, up: false };
+
+        // Karakter Penjelajah Hutan (Kecepatan pas: maxSpeed 4.0)
+        const player = {
+            x: 70,
+            y: 250,
+            w: 36,
+            h: 48,
+            vx: 0,
+            vy: 0,
+            speed: 4.0,
+            jumpPower: -11.6,
+            gravity: 0.55,
+            grounded: false,
+            facing: 1,
+            walkCycle: 0,
+            invulnTimer: 0
+        };
+
+        // Entitas Dunia
+        let checkpoints = [];
+        let platforms = [];
+        let leafCoins = [];
+        let enemies = [];
+        let clouds = [];
+        let sceneryTrees = [];
+        let ambientParticles = [];
+        let burstParticles = [];
+        let floatingTexts = [];
+
+        /* =========================================================================
+           5. PEMBANGUN DUNIA RIMBA (10 POS CHECKPOINT WAJIB)
+           ========================================================================= */
+        function buildWorld() {
+            // Tinggi tanah dinaikkan sedikit agar karakter & tanah berada jelas di atas tombol sentuh HP
+            const isMobilePortrait = window.innerWidth < window.innerHeight && window.innerWidth <= 768;
+            groundY = isMobilePortrait ? LOGICAL_HEIGHT - 125 : LOGICAL_HEIGHT - 95;
+
+            state.worldWidth = 5350;
+            state.flagX = 5000;
+            state.cameraX = 0;
+
+            player.x = 70;
+            player.y = groundY - player.h;
+            player.vx = 0;
+            player.vy = 0;
+            player.grounded = true;
+            player.facing = 1;
+            player.invulnTimer = 0;
+
+            checkpoints = [];
+            platforms = [];
+            leafCoins = [];
+            enemies = [];
+            burstParticles = [];
+            floatingTexts = [];
+
+            const startX = 380;
+            const spacing = 445;
+
+            for (let i = 0; i < 10; i++) {
+                const bx = startX + i * spacing;
+                const isHighBlock = (i % 3 === 1);
+                const by = isHighBlock ? groundY - 185 : groundY - 124;
+
+                if (isHighBlock) {
+                    platforms.push({
+                        x: bx - 72,
+                        y: groundY - 84,
+                        w: 160,
+                        h: 20
+                    });
+                } else if (i % 2 === 0 && i > 0) {
+                    platforms.push({
+                        x: bx - 185,
+                        y: groundY - 78,
+                        w: 110,
+                        h: 18
+                    });
+                }
+
+                checkpoints.push({
+                    index: i,
+                    number: i + 1,
+                    block: {
+                        x: bx,
+                        y: by,
+                        w: 44,
+                        h: 44,
+                        bumpOffset: 0
+                    },
+                    gate: {
+                        x: bx + 54,
+                        w: 28
+                    },
+                    solved: false,
+                    isCorrect: null,
+                    userAnswer: null,
+                    questionData: MARIO_QUESTIONS[i]
+                });
+
+                // 3 Koin Daun Emas di antara pos
+                for (let c = 0; c < 3; c++) {
+                    leafCoins.push({
+                        x: bx + 145 + c * 40,
+                        y: groundY - 58 - (c === 1 ? 24 : 0),
+                        r: 12,
+                        collected: false,
+                        bobOffset: c * 0.85
+                    });
+                }
+
+                // Musuh Jamur Rimba
+                if (i < 9) {
+                    enemies.push({
+                        x: bx + 255,
+                        y: groundY - 34,
+                        w: 36,
+                        h: 34,
+                        vx: -1.35,
+                        minX: bx + 115,
+                        maxX: bx + spacing - 45,
+                        alive: true,
+                        squishTimer: 0
+                    });
+                }
+            }
+
+            // Awan
+            clouds = [];
+            for (let i = 0; i < 18; i++) {
+                clouds.push({
+                    x: i * 320 + Math.random() * 100,
+                    y: 38 + Math.random() * 75,
+                    scale: 0.72 + Math.random() * 0.45,
+                    speed: 0.22 + Math.random() * 0.16
+                });
+            }
+
+            // Pohon latar belakang
+            sceneryTrees = [];
+            for (let i = 0; i < 36; i++) {
+                sceneryTrees.push({
+                    x: i * 155 + Math.random() * 35,
+                    h: 90 + Math.random() * 70,
+                    type: i % 2 === 0 ? 'pine' : 'bushy'
+                });
+            }
+
+            // Partikel kunang-kunang & daun melayang
+            ambientParticles = [];
+            for (let i = 0; i < 28; i++) {
+                ambientParticles.push({
+                    x: Math.random() * logicalW,
+                    y: Math.random() * groundY,
+                    vx: -0.4 - Math.random() * 0.55,
+                    vy: (Math.random() - 0.5) * 0.4,
+                    size: 2.5 + Math.random() * 2.8,
+                    type: i % 2 === 0 ? 'firefly' : 'leaf',
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+
+            updateHUD();
+        }
+
+        /* =========================================================================
+           6. UPDATE FISIKA, GERAKAN & TABRAKAN GERBANG WAJIB
+           ========================================================================= */
+        function updateGame() {
+            state.frameCount++;
+
+            clouds.forEach(c => {
+                c.x -= c.speed;
+                if (c.x < -160) c.x = state.worldWidth + 100;
+            });
+
+            ambientParticles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy + Math.sin(state.frameCount * 0.04 + p.phase) * 0.35;
+                if (p.x < -10) p.x = logicalW + 10;
+                if (p.y < 10) p.y = groundY - 20;
+                if (p.y > groundY) p.y = 20;
+            });
+
+            for (let i = burstParticles.length - 1; i >= 0; i--) {
+                const bp = burstParticles[i];
+                bp.x += bp.vx;
+                bp.y += bp.vy;
+                bp.vy += 0.28;
+                bp.rot += bp.vRot;
+                bp.life--;
+                if (bp.life <= 0) burstParticles.splice(i, 1);
+            }
+
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                const ft = floatingTexts[i];
+                ft.y += ft.vy;
+                ft.life--;
+                if (ft.life <= 0) floatingTexts.splice(i, 1);
+            }
+
+            checkpoints.forEach(cp => {
+                if (cp.block.bumpOffset < 0) {
+                    cp.block.bumpOffset += 1.5;
+                    if (cp.block.bumpOffset > 0) cp.block.bumpOffset = 0;
+                }
+            });
+
+            if (state.status !== 'playing') return;
+
+            if (player.invulnTimer > 0) player.invulnTimer--;
+            if (state.quizCooldown > 0) state.quizCooldown--;
+
+            // Kontrol Horizontal (Kecepatan pas: maxSpeed 4.0)
+            if (keys.left) {
+                player.vx += (-player.speed - player.vx) * 0.28;
+                player.facing = -1;
+                player.walkCycle += 0.2;
+            } else if (keys.right) {
+                player.vx += (player.speed - player.vx) * 0.28;
+                player.facing = 1;
+                player.walkCycle += 0.2;
+            } else {
+                player.vx *= 0.78;
+                if (Math.abs(player.vx) < 0.15) player.vx = 0;
+                player.walkCycle = 0;
+            }
+
+            // Lompat
+            if (keys.up && player.grounded) {
+                player.vy = player.jumpPower;
+                player.grounded = false;
+                RetroAudio.jump();
+            }
+
+            player.vy += player.gravity;
+
+            // Update X
+            player.x += player.vx;
+            if (player.x < 12) player.x = 12;
+            if (player.x > state.worldWidth - player.w - 20) {
+                player.x = state.worldWidth - player.w - 20;
+            }
+
+            // Cek Tabrakan Horizontal dengan Blok [?] & Gerbang Sulur Akar Wajib
+            for (const cp of checkpoints) {
+                const b = cp.block;
+                if (rectIntersect(player.x, player.y, player.w, player.h, b.x, b.y, b.w, b.h)) {
+                    if (player.vx > 0) player.x = b.x - player.w;
+                    else if (player.vx < 0) player.x = b.x + b.w;
+                }
+
+                if (!cp.solved) {
+                    const g = cp.gate;
+                    if (player.x + player.w > g.x) {
+                        player.x = g.x - player.w;
+                        player.vx = 0;
+                        if (state.quizCooldown <= 0) {
+                            RetroAudio.bump();
+                            triggerMandatoryQuiz(cp);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // Update Y
+            const prevY = player.y;
+            player.y += player.vy;
+            player.grounded = false;
+
+            if (player.y + player.h >= groundY) {
+                player.y = groundY - player.h;
+                player.vy = 0;
+                player.grounded = true;
+            }
+
+            platforms.forEach(p => {
+                if (player.vy >= 0 &&
+                    prevY + player.h <= p.y + 8 &&
+                    player.x + player.w - 6 > p.x &&
+                    player.x + 6 < p.x + p.w &&
+                    player.y + player.h >= p.y &&
+                    player.y + player.h <= p.y + p.h + 12) {
+                    player.y = p.y - player.h;
+                    player.vy = 0;
+                    player.grounded = true;
+                }
+            });
+
+            // Tabrakan Vertikal dengan Blok Misteri [?]
+            for (const cp of checkpoints) {
+                const b = cp.block;
+                if (rectIntersect(player.x, player.y, player.w, player.h, b.x, b.y, b.w, b.h)) {
+                    if (player.vy < 0 && prevY >= b.y + b.h - 12) {
+                        player.y = b.y + b.h;
+                        player.vy = 2;
+                        b.bumpOffset = -12;
+                        RetroAudio.bump();
+
+                        if (!cp.solved && state.quizCooldown <= 0) {
+                            triggerMandatoryQuiz(cp);
+                            return;
+                        }
+                    } else if (player.vy >= 0 && prevY + player.h <= b.y + 12) {
+                        player.y = b.y - player.h;
+                        player.vy = 0;
+                        player.grounded = true;
+                    }
+                }
+            }
+
+            // Koin Daun Emas
+            leafCoins.forEach(c => {
+                if (!c.collected) {
+                    const dx = (player.x + player.w / 2) - c.x;
+                    const dy = (player.y + player.h / 2) - c.y;
+                    if (Math.hypot(dx, dy) < player.w * 0.65 + c.r) {
+                        c.collected = true;
+                        state.coins += 1;
+                        state.score += 20;
+                        RetroAudio.coin();
+                        spawnFloatingText(c.x, c.y - 12, "+1 Daun (+20)", "#FEF08A");
+                        updateHUD();
+                    }
+                }
+            });
+
+            // Musuh Jamur Rimba
+            enemies.forEach(e => {
+                if (!e.alive) {
+                    if (e.squishTimer > 0) e.squishTimer--;
+                    return;
+                }
+
+                e.x += e.vx;
+                if (e.x <= e.minX || e.x + e.w >= e.maxX) {
+                    e.vx *= -1;
+                }
+
+                if (rectIntersect(player.x + 4, player.y + 4, player.w - 8, player.h - 4, e.x, e.y, e.w, e.h)) {
+                    if (player.vy > 0 && prevY + player.h <= e.y + 16) {
+                        e.alive = false;
+                        e.squishTimer = 26;
+                        player.vy = -9.5;
+                        state.coins += 2;
+                        state.score += 50;
+                        RetroAudio.stomp();
+                        spawnFloatingText(e.x + 18, e.y - 12, "+2 Daun (+50)", "#86EFAC");
+                        updateHUD();
+                    } else if (player.invulnTimer <= 0) {
+                        player.invulnTimer = 80;
+                        player.vy = -6.5;
+                        player.vx = -player.facing * 4;
+                        RetroAudio.hurt();
+                        if (state.lives > 0) state.lives--;
+                        updateHUD();
+                        spawnFloatingText(player.x + 18, player.y - 22, "Hati-hati Jamur!", "#FDA4AF");
+                    }
+                }
+            });
+
+            // Kamera Mengikuti Pemain (pada layar portrait sempit, posisikan pemain sedikit ke kiri agar blok depan terlihat jelas)
+            const focusRatio = logicalW < 420 ? 0.24 : 0.34;
+            const targetCamX = player.x - logicalW * focusRatio;
+            state.cameraX += (targetCamX - state.cameraX) * 0.14;
+            if (state.cameraX < 0) state.cameraX = 0;
+            if (state.cameraX > state.worldWidth - logicalW) {
+                state.cameraX = Math.max(0, state.worldWidth - logicalW);
+            }
+
+            // Cek Bendera Finis
+            if (!state.flagReached && player.x + player.w >= state.flagX) {
+                const unsolved = checkpoints.find(cp => !cp.solved);
+                if (!unsolved) {
+                    state.flagReached = true;
+                    winGame();
+                }
+            }
+        }
+
+        function rectIntersect(x1, y1, w1, h1, x2, y2, w2, h2) {
+            return x1 < x2 + w2 && x1 + w1 > x2 && y1 < y2 + h2 && y1 + h1 > y2;
+        }
+
+        function spawnFloatingText(x, y, text, color) {
+            floatingTexts.push({ x, y, text, color, vy: -1.35, life: 52 });
+        }
+
+        function spawnLeafExplosion(gx) {
+            const colors = ["#22C55E", "#4ADE80", "#FACC15", "#86EFAC", "#A3E635"];
+            for (let i = 0; i < 36; i++) {
+                burstParticles.push({
+                    x: gx + Math.random() * 28,
+                    y: groundY - Math.random() * (groundY - 40),
+                    vx: (Math.random() - 0.5) * 9,
+                    vy: -2 - Math.random() * 6,
+                    size: 6 + Math.random() * 7,
+                    color: colors[i % colors.length],
+                    rot: Math.random() * Math.PI,
+                    vRot: (Math.random() - 0.5) * 0.25,
+                    life: 45 + Math.random() * 20
+                });
+            }
+        }
+
+        /* =========================================================================
+           7. RENDER DUNIA ALAM MARIO DI CANVAS (DENGAN SKALA LOGIS DINAMIS)
+           ========================================================================= */
+        function renderGame() {
+            ctx.save();
+            ctx.scale(viewScale, viewScale);
+
+            ctx.clearRect(0, 0, logicalW, LOGICAL_HEIGHT);
+
+            // 1. Langit Gradien Alam Cerah
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
+            skyGrad.addColorStop(0, "#38BDF8");
+            skyGrad.addColorStop(0.55, "#BAE6FD");
+            skyGrad.addColorStop(1, "#DCFCE7");
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, logicalW, LOGICAL_HEIGHT);
+
+            // Matahari
+            const sunX = logicalW - 72;
+            const sunY = 64;
+            ctx.fillStyle = "rgba(254, 240, 138, 0.35)";
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, 48 + Math.sin(state.frameCount * 0.04) * 3.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#FDE047";
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, 29, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 2. Pegunungan Hijau Paralaks
+            drawParallaxMountains();
+
+            // 3. Awan Bergerak
+            clouds.forEach(c => {
+                const screenX = c.x - state.cameraX * 0.4;
+                if (screenX > -150 && screenX < logicalW + 150) {
+                    drawCloud(screenX, c.y, c.scale);
+                }
+            });
+
+            // 4. Partikel Kunang-kunang & Daun
+            ambientParticles.forEach(p => {
+                if (p.type === 'firefly') {
+                    const alpha = 0.45 + Math.sin(state.frameCount * 0.1 + p.phase) * 0.45;
+                    ctx.fillStyle = `rgba(254, 240, 138, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = "rgba(34, 197, 94, 0.65)";
+                    ctx.beginPath();
+                    ctx.ellipse(p.x, p.y, p.size * 1.4, p.size * 0.7, p.phase, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            ctx.save();
+            ctx.translate(-state.cameraX, 0);
+
+            // 5. Pepohonan Latar Belakang
+            sceneryTrees.forEach(t => {
+                if (t.x > state.cameraX - 150 && t.x < state.cameraX + logicalW + 150) {
+                    drawTree(t.x, groundY, t.h, t.type);
+                }
+            });
+
+            // 6. Tiang Bendera Finis
+            drawGoalFlag(state.flagX, groundY);
+
+            // 7. Platform Kayu
+            platforms.forEach(p => drawWoodPlatform(p));
+
+            // 8. 10 Pos Checkpoint: Blok Misteri [?] + Gerbang Sulur Akar Wajib
+            const nextUnsolved = checkpoints.find(cp => !cp.solved);
+            checkpoints.forEach(cp => {
+                const isNext = (nextUnsolved && nextUnsolved.number === cp.number);
+                if (!cp.solved) {
+                    drawVineGate(cp.gate, cp.number, isNext);
+                }
+                drawQuestionBlock(cp, isNext);
+            });
+
+            // 9. Koin Daun Emas
+            leafCoins.forEach(c => {
+                if (!c.collected) {
+                    const bob = Math.sin(state.frameCount * 0.08 + c.bobOffset) * 4;
+                    drawLeafCoin(c.x, c.y + bob, c.r);
+                }
+            });
+
+            // 10. Musuh Jamur Rimba
+            enemies.forEach(e => {
+                if (e.alive || e.squishTimer > 0) drawForestEnemy(e);
+            });
+
+            // 11. Karakter Penjelajah Hutan
+            drawExplorerPlayer();
+
+            // 12. Ledakan Daun
+            burstParticles.forEach(bp => {
+                ctx.save();
+                ctx.translate(bp.x, bp.y);
+                ctx.rotate(bp.rot);
+                ctx.fillStyle = bp.color;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, bp.size, bp.size * 0.55, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // 13. Teks Melayang
+            floatingTexts.forEach(ft => {
+                ctx.font = "bold 16px 'Fredoka', sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#1B4332";
+                ctx.fillText(ft.text, ft.x + 1.5, ft.y + 1.5);
+                ctx.fillStyle = ft.color;
+                ctx.fillText(ft.text, ft.x, ft.y);
+            });
+
+            ctx.restore();
+
+            // 14. Lantai Tanah & Rumput Hijau Rimba
+            drawGroundLayer();
+
+            ctx.restore();
+        }
+
+        function drawParallaxMountains() {
+            ctx.fillStyle = "#4ADE80";
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            for (let x = 0; x <= logicalW + 200; x += 180) {
+                const worldShift = (state.cameraX * 0.14) % 360;
+                const peakH = 115 + Math.sin((x + worldShift) * 0.015) * 40;
+                ctx.lineTo(x - worldShift, groundY - peakH);
+            }
+            ctx.lineTo(logicalW, groundY);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = "#22C55E";
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            for (let x = 0; x <= logicalW + 200; x += 140) {
+                const worldShift = (state.cameraX * 0.28) % 280;
+                const peakH = 68 + Math.cos((x + worldShift) * 0.02) * 26;
+                ctx.lineTo(x - worldShift, groundY - peakH);
+            }
+            ctx.lineTo(logicalW, groundY);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawCloud(x, y, scale) {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+            ctx.beginPath();
+            ctx.arc(x, y, 21 * scale, 0, Math.PI * 2);
+            ctx.arc(x + 19 * scale, y - 8 * scale, 25 * scale, 0, Math.PI * 2);
+            ctx.arc(x + 42 * scale, y, 19 * scale, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawTree(x, baseY, h, type) {
+            ctx.fillStyle = "#6F4518";
+            ctx.fillRect(x - 8, baseY - h * 0.45, 16, h * 0.45);
+
+            if (type === 'pine') {
+                ctx.fillStyle = "#15803D";
+                for (let layer = 0; layer < 3; layer++) {
+                    const ly = baseY - h * 0.35 - layer * (h * 0.22);
+                    const lw = 36 - layer * 7;
+                    ctx.beginPath();
+                    ctx.moveTo(x, ly - h * 0.32);
+                    ctx.lineTo(x - lw, ly);
+                    ctx.lineTo(x + lw, ly);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            } else {
+                ctx.fillStyle = "#16A34A";
+                ctx.beginPath();
+                ctx.arc(x, baseY - h * 0.58, 30, 0, Math.PI * 2);
+                ctx.arc(x - 19, baseY - h * 0.48, 21, 0, Math.PI * 2);
+                ctx.arc(x + 19, baseY - h * 0.48, 21, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawGroundLayer() {
+            const groundH = LOGICAL_HEIGHT - groundY;
+            ctx.fillStyle = "#7F4F24";
+            ctx.fillRect(0, groundY, logicalW, groundH);
+
+            ctx.fillStyle = "#582F0E";
+            const offset = state.cameraX % 48;
+            for (let x = -offset; x < logicalW; x += 48) {
+                ctx.fillRect(x + 8, groundY + 24, 16, 10);
+                ctx.fillRect(x + 26, groundY + 46, 14, 9);
+            }
+
+            ctx.fillStyle = "#16A34A";
+            ctx.fillRect(0, groundY, logicalW, 15);
+            ctx.fillStyle = "#4ADE80";
+            ctx.fillRect(0, groundY, logicalW, 5);
+        }
+
+        function drawWoodPlatform(p) {
+            ctx.fillStyle = "#9C6644";
+            ctx.beginPath();
+            ctx.roundRect(p.x, p.y, p.w, p.h, 6);
+            ctx.fill();
+            ctx.strokeStyle = "#582F0E";
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            ctx.fillStyle = "#22C55E";
+            ctx.fillRect(p.x + 3, p.y, p.w - 6, 5);
+        }
+
+        function drawVineGate(g, num, isNext) {
+            const grad = ctx.createLinearGradient(g.x, 0, g.x + g.w, 0);
+            grad.addColorStop(0, "#14532D");
+            grad.addColorStop(0.5, "#166534");
+            grad.addColorStop(1, "#052E16");
+            ctx.fillStyle = grad;
+            ctx.fillRect(g.x, 0, g.w, groundY);
+
+            ctx.strokeStyle = "#4ADE80";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let y = 0; y <= groundY; y += 20) {
+                const wave = Math.sin(y * 0.08 + state.frameCount * 0.05) * 6;
+                if (y === 0) ctx.moveTo(g.x + g.w / 2 + wave, y);
+                else ctx.lineTo(g.x + g.w / 2 + wave, y);
+            }
+            ctx.stroke();
+
+            ctx.fillStyle = "#22C55E";
+            for (let y = 30; y < groundY - 20; y += 55) {
+                ctx.beginPath();
+                ctx.ellipse(g.x - 4, y, 7, 4, -0.4, 0, Math.PI * 2);
+                ctx.ellipse(g.x + g.w + 4, y + 25, 7, 4, 0.4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const lockY = groundY - 60;
+            ctx.fillStyle = isNext ? "#FACC15" : "#D97706";
+            ctx.beginPath();
+            ctx.roundRect(g.x - 6, lockY - 18, g.w + 12, 36, 9);
+            ctx.fill();
+            ctx.strokeStyle = "#78350F";
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            ctx.font = "bold 12px 'Fredoka', sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = "#451A03";
+            ctx.fillText(`POS ${num}`, g.x + g.w / 2, lockY);
+        }
+
+        function drawQuestionBlock(cp, isNextTarget) {
+            const b = cp.block;
+            const drawY = b.y + b.bumpOffset;
+
+            if (isNextTarget && !cp.solved) {
+                const pulse = 5 + Math.sin(state.frameCount * 0.12) * 3;
+                ctx.fillStyle = "rgba(253, 224, 71, 0.4)";
+                ctx.beginPath();
+                ctx.roundRect(b.x - pulse, drawY - pulse, b.w + pulse * 2, b.h + pulse * 2, 12);
+                ctx.fill();
+            }
+
+            if (cp.solved) {
+                ctx.fillStyle = "#8D6E63";
+            } else {
+                const grad = ctx.createLinearGradient(b.x, drawY, b.x, drawY + b.h);
+                grad.addColorStop(0, "#FDE047");
+                grad.addColorStop(1, "#F59E0B");
+                ctx.fillStyle = grad;
+            }
+
+            ctx.beginPath();
+            ctx.roundRect(b.x, drawY, b.w, b.h, 8);
+            ctx.fill();
+
+            ctx.strokeStyle = cp.solved ? "#4E342E" : "#92400E";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            ctx.fillStyle = cp.solved ? "#5D4037" : "#B45309";
+            ctx.fillRect(b.x + 4, drawY + 4, 4, 4);
+            ctx.fillRect(b.x + b.w - 8, drawY + 4, 4, 4);
+            ctx.fillRect(b.x + 4, drawY + b.h - 8, 4, 4);
+            ctx.fillRect(b.x + b.w - 8, drawY + b.h - 8, 4, 4);
+
+            ctx.font = "bold 24px 'Fredoka', sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = cp.solved ? "#D7CCC8" : "#78350F";
+            ctx.fillText(cp.solved ? "✓" : "?", b.x + b.w / 2, drawY + b.h / 2 + 1);
+
+            ctx.fillStyle = cp.solved ? (cp.isCorrect ? "#15803D" : "#B45309") : "#1B4332";
+            ctx.beginPath();
+            ctx.roundRect(b.x + 8, drawY - 22, 28, 18, 6);
+            ctx.fill();
+            ctx.font = "bold 11px 'Plus Jakarta Sans', sans-serif";
+            ctx.fillStyle = "#FEF08A";
+            ctx.fillText(`#${cp.number}`, b.x + b.w / 2, drawY - 13);
+        }
+
+        function drawLeafCoin(x, y, r) {
+            ctx.fillStyle = "#FACC15";
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#B45309";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = "#15803D";
+            ctx.beginPath();
+            ctx.ellipse(x, y, r * 0.55, r * 0.32, -0.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawForestEnemy(e) {
+            if (!e.alive) {
+                ctx.fillStyle = "#92400E";
+                ctx.beginPath();
+                ctx.roundRect(e.x, e.y + e.h - 12, e.w, 12, 4);
+                ctx.fill();
+                return;
+            }
+
+            ctx.fillStyle = "#FDE68A";
+            ctx.fillRect(e.x + 9, e.y + 18, 18, 16);
+
+            ctx.fillStyle = "#DC2626";
+            ctx.beginPath();
+            ctx.arc(e.x + e.w / 2, e.y + 18, 18, Math.PI, 0);
+            ctx.fill();
+
+            ctx.fillStyle = "#FFFFFF";
+            ctx.beginPath();
+            ctx.arc(e.x + 11, e.y + 10, 3.5, 0, Math.PI * 2);
+            ctx.arc(e.x + 25, e.y + 10, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#1E293B";
+            ctx.fillRect(e.x + 12, e.y + 21, 3, 6);
+            ctx.fillRect(e.x + 21, e.y + 21, 3, 6);
+        }
+
+        function drawGoalFlag(fx, baseY) {
+            ctx.fillStyle = "#57534E";
+            ctx.fillRect(fx - 18, baseY - 24, 36, 24);
+
+            ctx.fillStyle = "#FEF08A";
+            ctx.fillRect(fx - 3, baseY - 235, 6, 211);
+
+            ctx.fillStyle = "#F59E0B";
+            ctx.beginPath();
+            ctx.arc(fx, baseY - 239, 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            const wave = Math.sin(state.frameCount * 0.1) * 4;
+            ctx.fillStyle = "#16A34A";
+            ctx.beginPath();
+            ctx.moveTo(fx + 3, baseY - 230);
+            ctx.lineTo(fx + 72, baseY - 208 + wave);
+            ctx.lineTo(fx + 3, baseY - 184);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = "#FDE047";
+            ctx.font = "bold 14px sans-serif";
+            ctx.fillText("★", fx + 26, baseY - 202);
+        }
+
+        function drawExplorerPlayer() {
+            if (player.invulnTimer > 0 && Math.floor(player.invulnTimer / 4) % 2 === 0) return;
+
+            ctx.save();
+            ctx.translate(player.x + player.w / 2, player.y + player.h / 2);
+            ctx.scale(player.facing, 1);
+
+            const legSwing = player.grounded ? Math.sin(player.walkCycle) * 5 : 4;
+
+            // Ransel Petualang
+            ctx.fillStyle = "#92400E";
+            ctx.beginPath();
+            ctx.roundRect(-17, -4, 9, 18, 4);
+            ctx.fill();
+            ctx.strokeStyle = "#451A03";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Sepatu Bot
+            ctx.fillStyle = "#582F0E";
+            ctx.fillRect(-10 + legSwing, 14, 9, 10);
+            ctx.fillRect(2 - legSwing, 14, 9, 10);
+
+            // Baju Hijau Rimba & Syal Emas
+            ctx.fillStyle = "#15803D";
+            ctx.beginPath();
+            ctx.roundRect(-11, -2, 22, 18, 5);
+            ctx.fill();
+
+            ctx.fillStyle = "#FACC15";
+            ctx.fillRect(-9, -3, 18, 4);
+
+            // Kepala
+            ctx.fillStyle = "#FDBA74";
+            ctx.beginPath();
+            ctx.arc(0, -11, 10.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Topi Petualang Rimba
+            ctx.fillStyle = "#B45309";
+            ctx.beginPath();
+            ctx.arc(0, -15, 10, Math.PI, 0);
+            ctx.fill();
+            ctx.fillStyle = "#92400E";
+            ctx.beginPath();
+            ctx.roundRect(-14, -16, 28, 4, 2);
+            ctx.fill();
+            ctx.fillStyle = "#22C55E";
+            ctx.fillRect(-9, -18, 18, 2.5);
+
+            // Mata
+            ctx.fillStyle = "#1E293B";
+            ctx.fillRect(4, -13, 3, 4);
+
+            ctx.restore();
+        }
+
+        /* =========================================================================
+           8. MEKANISME SOAL WAJIB DIJAWAB (BENAR MAUPUN SALAH TETAP BISA LANJUT)
+           ========================================================================= */
+        function triggerMandatoryQuiz(cp) {
+            state.status = 'quiz';
+            state.activeCheckpoint = cp;
+            state.quizAnsweredCurrent = false;
+
+            // Reset semua tombol gerak agar tidak nyangkut
+            keys.left = false;
+            keys.right = false;
+            keys.up = false;
+            document.querySelectorAll('.touch-btn').forEach(b => b.classList.remove('pressed'));
+
+            const q = cp.questionData;
+            document.getElementById('quizBlockBadge').textContent = q.id;
+            document.getElementById('quizNumberTitle').textContent = q.id;
+            document.getElementById('quizCategoryBadge').textContent = q.category;
+            document.getElementById('quizPromptText').textContent = q.prompt;
+            document.getElementById('quizMathBox').innerHTML = `<span class="math-expr">${q.math}</span>`;
+
+            const grid = document.getElementById('quizOptionsGrid');
+            grid.innerHTML = '';
+
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn text-left p-3 rounded-2xl bg-white hover:bg-amber-50 border-2 border-[#C8B99E] hover:border-emerald-700 transition-all flex items-center gap-2.5 shadow-sm cursor-pointer";
+                btn.dataset.key = opt.key;
+                btn.innerHTML = `
+                    <span class="opt-letter w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-800 text-amber-200 font-mario text-sm sm:text-base flex items-center justify-center shrink-0">
+                        ${opt.key}
+                    </span>
+                    <span class="math-expr text-base sm:text-xl">${opt.html}</span>
+                `;
+                btn.onclick = () => evaluateAnswerAndUnlock(opt.key);
+                grid.appendChild(btn);
+            });
+
+            document.getElementById('quizFeedbackBox').classList.add('hidden');
+            document.getElementById('quizOverlay').classList.remove('hidden');
+        }
+
+        function evaluateAnswerAndUnlock(selectedKey) {
+            if (state.quizAnsweredCurrent) return;
+            state.quizAnsweredCurrent = true;
+
+            const cp = state.activeCheckpoint;
+            const q = cp.questionData;
+            const isCorrect = (selectedKey === q.correctKey);
+
+            cp.solved = true;
+            cp.isCorrect = isCorrect;
+            cp.userAnswer = selectedKey;
+            state.solvedCount++;
+
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('hover:bg-amber-50', 'hover:border-emerald-700', 'cursor-pointer');
+                const k = btn.dataset.key;
+
+                if (k === q.correctKey) {
+                    btn.classList.add('bg-emerald-100', 'border-emerald-700', 'ring-2', 'ring-emerald-500');
+                    btn.querySelector('.opt-letter').classList.replace('bg-emerald-800', 'bg-emerald-600');
+                } else if (k === selectedKey && !isCorrect) {
+                    btn.classList.add('bg-rose-100', 'border-rose-600', 'ring-2', 'ring-rose-400');
+                    btn.querySelector('.opt-letter').classList.replace('bg-emerald-800', 'bg-rose-600');
+                } else {
+                    btn.classList.add('opacity-50');
+                }
+            });
+
+            const fbBox = document.getElementById('quizFeedbackBox');
+            const fbIconBox = document.getElementById('quizFeedbackIconBox');
+            const fbIcon = document.getElementById('quizFeedbackIcon');
+            const fbTitle = document.getElementById('quizFeedbackTitle');
+            const keyBadge = document.getElementById('quizCorrectKeyBadge');
+            const continueBtn = document.getElementById('quizContinueBtn');
+            const continueText = document.getElementById('quizContinueText');
+
+            if (isCorrect) {
+                state.correctCount++;
+                state.score += 100;
+                state.coins += 3;
+                RetroAudio.coin();
+
+                fbBox.className = "mt-4 rounded-2xl p-3.5 sm:p-4 bg-emerald-50 border-2 border-emerald-600 animate-pop";
+                fbIconBox.className = "w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white shrink-0 mt-0.5 shadow";
+                fbIcon.className = "fa-solid fa-check";
+                fbTitle.className = "font-mario text-sm sm:text-lg text-emerald-900";
+                fbTitle.textContent = "JAWABAN BENAR! +100 Poin & +3 Koin Daun";
+                keyBadge.classList.add('hidden');
+                continueBtn.className = "btn-mario w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-b from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 border-2 border-emerald-950 text-amber-100 font-mario text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer";
+                continueText.textContent = "Lanjut Berpetualang";
+            } else {
+                state.wrongCount++;
+                if (state.lives > 0) state.lives--;
+                RetroAudio.hurt();
+
+                const card = document.getElementById('quizCard');
+                card.classList.remove('animate-shake');
+                void card.offsetWidth;
+                card.classList.add('animate-shake');
+
+                const correctOpt = q.options.find(o => o.key === q.correctKey);
+                fbBox.className = "mt-4 rounded-2xl p-3.5 sm:p-4 bg-amber-50 border-2 border-amber-600 animate-pop";
+                fbIconBox.className = "w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-rose-600 flex items-center justify-center text-white shrink-0 mt-0.5 shadow";
+                fbIcon.className = "fa-solid fa-xmark";
+                fbTitle.className = "font-mario text-sm sm:text-lg text-rose-900";
+                fbTitle.textContent = "KURANG TEPAT! (0 Poin) — Gerbang Tetap Terbuka";
+                keyBadge.innerHTML = `Kunci Jawaban Benar: ${q.correctKey}. ${correctOpt ? correctOpt.html : ''}`;
+                keyBadge.classList.remove('hidden');
+                continueBtn.className = "btn-mario w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-b from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 border-2 border-amber-950 text-amber-950 font-mario text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer";
+                continueText.textContent = "Tetap Lanjut ke Pos Berikutnya";
+            }
+
+            document.getElementById('quizExplanationText').innerHTML = `<strong>Pembahasan Singkat:</strong><br>${q.explanation}`;
+            fbBox.classList.remove('hidden');
+            updateHUD();
+        }
+
+        function unlockGateAndResume() {
+            const cp = state.activeCheckpoint;
+            document.getElementById('quizOverlay').classList.add('hidden');
+
+            RetroAudio.gateBreak();
+            spawnLeafExplosion(cp.gate.x);
+            const bannerTxt = cp.isCorrect ? "GERBANG TERBUKA! +100" : "GERBANG TERBUKA! LANJUT!";
+            const bannerCol = cp.isCorrect ? "#86EFAC" : "#FDE047";
+            spawnFloatingText(cp.gate.x + 14, groundY - 82, bannerTxt, bannerCol);
+
+            state.status = 'playing';
+            state.quizCooldown = 15;
+            updateHUD();
+        }
+
+        /* =========================================================================
+           9. HUD, REKAP NILAI & KONDISI FINIS
+           ========================================================================= */
+        function updateHUD() {
+            document.getElementById('scoreText').textContent = state.score;
+            document.getElementById('coinsText').textContent = state.coins;
+            document.getElementById('blockProgressText').textContent = `Pos: ${state.solvedCount} / 10`;
+
+            const livesEl = document.getElementById('livesDisplay');
+            livesEl.innerHTML = '';
+            for (let i = 0; i < state.maxLives; i++) {
+                if (i < state.lives) {
+                    livesEl.innerHTML += `<i class="fa-solid fa-leaf text-emerald-400 text-[10px] sm:text-sm drop-shadow"></i>`;
+                } else {
+                    livesEl.innerHTML += `<i class="fa-solid fa-leaf text-stone-500/40 text-[10px] sm:text-sm"></i>`;
+                }
+            }
+
+            const dotsEl = document.getElementById('miniMapDots');
+            dotsEl.innerHTML = '';
+            for (let i = 0; i < 10; i++) {
+                const cp = checkpoints[i];
+                const dot = document.createElement('span');
+                if (cp && cp.solved) {
+                    dot.className = cp.isCorrect
+                        ? "w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-400 border border-emerald-950"
+                        : "w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-rose-400 border border-rose-950";
+                } else {
+                    dot.className = "w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-amber-300/35 border border-amber-200/40";
+                }
+                dotsEl.appendChild(dot);
+            }
+
+            const nextCp = checkpoints.find(cp => !cp.solved);
+            const hintEl = document.getElementById('floatingHint');
+            if (state.status === 'playing') {
+                hintEl.classList.remove('hidden');
+                if (nextCp) {
+                    hintEl.innerHTML = `<i class="fa-solid fa-lock text-amber-300 mr-1"></i> Sundul Blok <span class="text-amber-300 font-extrabold">[?] #${nextCp.number}</span> atau sentuh <span class="text-emerald-300 font-extrabold">Gerbang Pos ${nextCp.number}</span>!`;
+                } else {
+                    hintEl.innerHTML = `<i class="fa-solid fa-flag-checkered text-emerald-300 mr-1"></i> Semua Pos Selesai! Lari menuju <span class="text-amber-300 font-extrabold">Bendera Finis</span>!`;
+                }
+            } else {
+                hintEl.classList.add('hidden');
+            }
+        }
+
+        function winGame() {
+            state.status = 'victory';
+            RetroAudio.stageClear();
+            document.getElementById('floatingHint').classList.add('hidden');
+
+            document.getElementById('endTitle').textContent = "Puncak Rimba Tercapai!";
+            document.getElementById('endSubtitle').textContent = `Kamu menuntaskan seluruh 10 Pos Eksponen & Bentuk Akar (${state.correctCount} Benar, ${state.wrongCount} Salah).`;
+            document.getElementById('endScoreVal').textContent = state.score;
+            document.getElementById('endCorrectVal').textContent = `${state.correctCount} / 10`;
+            document.getElementById('endWrongVal').textContent = `${state.wrongCount} / 10`;
+            document.getElementById('endCoinsVal').textContent = state.coins;
+
+            const recapGrid = document.getElementById('endRecapGrid');
+            recapGrid.innerHTML = '';
+            checkpoints.forEach(cp => {
+                const item = document.createElement('div');
+                const ok = cp.isCorrect;
+                item.className = ok
+                    ? "p-2 rounded-xl bg-emerald-100 border border-emerald-500 flex items-center justify-between text-xs"
+                    : "p-2 rounded-xl bg-rose-100 border border-rose-500 flex items-center justify-between text-xs";
+                item.innerHTML = `
+                    <span class="font-extrabold ${ok ? 'text-emerald-950' : 'text-rose-950'}">Pos #${cp.number}</span>
+                    <span class="font-bold px-1.5 py-0.5 rounded ${ok ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}">
+                        ${ok ? '<i class="fa-solid fa-check"></i> Benar' : '<i class="fa-solid fa-xmark"></i> Salah'}
+                    </span>
+                `;
+                recapGrid.appendChild(item);
+            });
+
+            document.getElementById('endOverlay').classList.remove('hidden');
+
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 95, spread: 75, origin: { y: 0.6 } });
+            }
+        }
+
+        /* =========================================================================
+           10. KONTROL MULAI, ULANGI, MODAL & MULTI-TOUCH LISTENER
+           ========================================================================= */
+        function startGame() {
+            RetroAudio.init();
+            RetroAudio.coin();
+            document.getElementById('startOverlay').classList.add('hidden');
+            state.status = 'playing';
+            state.score = 0;
+            state.coins = 0;
+            state.lives = 5;
+            state.solvedCount = 0;
+            state.correctCount = 0;
+            state.wrongCount = 0;
+            state.flagReached = false;
+            resizeCanvas();
+            buildWorld();
+        }
+
+        function restartFullGame() {
+            document.getElementById('endOverlay').classList.add('hidden');
+            startGame();
+        }
+
+        function openFormulaModal() {
+            document.getElementById('formulaModal').classList.remove('hidden');
+        }
+
+        function closeFormulaModal() {
+            document.getElementById('formulaModal').classList.add('hidden');
+        }
+
+        // Kontrol Keyboard Desktop
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+            if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') {
+                keys.up = true;
+                if (state.status === 'playing') e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+            if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') keys.up = false;
+        });
+
+        // Kontrol Multi-Touch Layar HP/Tablet/Papan Tulis
+        function bindMultiTouchButton(btnId, keyName) {
+            const btn = document.getElementById(btnId);
+            const activePointers = new Set();
+
+            const updateState = () => {
+                const isPressed = activePointers.size > 0;
+                keys[keyName] = isPressed;
+                if (isPressed) btn.classList.add('pressed');
+                else btn.classList.remove('pressed');
+            };
+
+            btn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                RetroAudio.init();
+                activePointers.add(e.pointerId);
+                try { btn.setPointerCapture(e.pointerId); } catch (err) {}
+                updateState();
+            });
+
+            const releasePointer = (e) => {
+                e.preventDefault();
+                activePointers.delete(e.pointerId);
+                updateState();
+            };
+
+            btn.addEventListener('pointerup', releasePointer);
+            btn.addEventListener('pointercancel', releasePointer);
+            btn.addEventListener('lostpointercapture', releasePointer);
+        }
+
+        bindMultiTouchButton('btnLeft', 'left');
+        bindMultiTouchButton('btnRight', 'right');
+        bindMultiTouchButton('btnJump', 'up');
+
+        // Responsif Resize Canvas dengan Skala Logis Tetap (480px tinggi)
+        function resizeCanvas() {
+            const wrapper = document.getElementById('canvasWrapper');
+            const rectW = wrapper.clientWidth || window.innerWidth;
+            const rectH = wrapper.clientHeight || window.innerHeight;
+
+            canvas.width = rectW;
+            canvas.height = rectH;
+
+            viewScale = rectH / LOGICAL_HEIGHT;
+            logicalW = rectW / viewScale;
+
+            const oldGroundY = groundY;
+            const isMobilePortrait = window.innerWidth < window.innerHeight && window.innerWidth <= 768;
+            groundY = isMobilePortrait ? LOGICAL_HEIGHT - 125 : LOGICAL_HEIGHT - 95;
+            const diffY = groundY - oldGroundY;
+
+            if (player.y > 0) player.y += diffY;
+            checkpoints.forEach(cp => cp.block.y += diffY);
+            platforms.forEach(p => p.y += diffY);
+            leafCoins.forEach(c => c.y += diffY);
+            enemies.forEach(e => e.y += diffY);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 120));
+
+        function gameLoop() {
+            updateGame();
+            renderGame();
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.onload = function () {
+            resizeCanvas();
+            buildWorld();
+            gameLoop();
+        };
+    </script>
+</body>
+</html>
